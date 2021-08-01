@@ -1,82 +1,68 @@
-import Head from 'next/head'
+import Head from "next/head";
+import Header from "../components/Header";
+import { Nav } from "../components/Nav";
+import requests from "../utils/requests";
+import Image from "next/image";
+import { ThumbUpIcon } from "@heroicons/react/outline";
 
-export default function Home() {
+export default function Home({ results }) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-2">
+    <div>
       <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
+        <title>Hulu 2.0</title>
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
       </Head>
-
-      <main className="flex flex-col items-center justify-center w-full flex-1 px-20 text-center">
-        <h1 className="text-6xl font-bold">
-          Welcome to{' '}
-          <a className="text-blue-600" href="https://nextjs.org">
-            Next.js!
-          </a>
-        </h1>
-
-        <p className="mt-3 text-2xl">
-          Get started by editing{' '}
-          <code className="p-3 font-mono text-lg bg-gray-100 rounded-md">
-            pages/index.js
-          </code>
-        </p>
-
-        <div className="flex flex-wrap items-center justify-around max-w-4xl mt-6 sm:w-full">
-          <a
-            href="https://nextjs.org/docs"
-            className="p-6 mt-6 text-left border w-96 rounded-xl hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Documentation &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Find in-depth information about Next.js features and API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn"
-            className="p-6 mt-6 text-left border w-96 rounded-xl hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Learn &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Learn about Next.js in an interactive course with quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className="p-6 mt-6 text-left border w-96 rounded-xl hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Examples &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Discover and deploy boilerplate example Next.js projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className="p-6 mt-6 text-left border w-96 rounded-xl hover:text-blue-600 focus:text-blue-600"
-          >
-            <h3 className="text-2xl font-bold">Deploy &rarr;</h3>
-            <p className="mt-4 text-xl">
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className="flex items-center justify-center w-full h-24 border-t">
-        <a
-          className="flex items-center justify-center"
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className="h-4 ml-2" />
-        </a>
-      </footer>
+      <Header />
+      <Nav />
+      <Results results={results} />
     </div>
-  )
+  );
+}
+
+export async function getServerSideProps(context) {
+  const genre = context.query.genre;
+  const request = await fetch(
+    `https://api.themoviedb.org/3${
+      requests[genre]?.url || requests.fetchTrending.url
+    }`
+  ).then((res) => res.json());
+
+  return {
+    props: {
+      results: request.results,
+    },
+  };
+}
+
+function Results({ results }) {
+  return (
+    <div className="px-5 my-10 sm:grid md:grid-cols-2 xl:grid-cols-3 2xl:flex flex-wrap justify-center">
+      {results.map((res) => (
+        <Thumbnail key={res.id} result={res} />
+      ))}
+    </div>
+  );
+}
+
+function Thumbnail({ result }) {
+  const BASE_URL = "https://image.tmdb.org/t/p/original/";
+  return (
+    <div className="group cursor-pointer p-2 transition-all duration-200 ease-in transform sm:hover:scale-105">
+      <Image
+        layout="responsive"
+        src={`${BASE_URL}${result.backdrop_path || result.poster_path}`}
+        width={1920}
+        height={1080}
+      />
+      <div className="p-2">
+        <p className="truncate max-w-md">{result.overview}</p>
+        <h2 className="mt-1 text-2xl text-white transition-all duration-100 ease-in-out group-hover:font-bold">
+          {result.title || result.original_name}
+        </h2>
+        <p className="flex items-center opacity-0 group-hover:opacity-100">
+          <ThumbUpIcon className="h-5 mx-2" /> {result.vote_count}
+        </p>
+      </div>
+    </div>
+  );
 }
